@@ -17,6 +17,12 @@
   /* green-600 */
 }
 
+/* Mejoras de lectura/zoom en iOS/Android */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -31,6 +37,8 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
   color: var(--fg);
   background: var(--bg-grad);
+  touch-action: pan-x pan-y;
+  /* scroll táctil suave */
 }
 
 .container {
@@ -264,6 +272,7 @@ button:disabled {
   display: none;
 }
 
+/* --- GRID del calendario --- */
 .grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -284,7 +293,8 @@ button:disabled {
 
 .day {
   background: #0b0f1a;
-  min-height: 104px;
+  /* Altura fluida pero con límite mínimo para móviles */
+  min-height: clamp(72px, 11.5vw, 104px);
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -309,6 +319,7 @@ button:disabled {
   border-radius: 999px;
   border: 1px solid transparent;
   width: max-content;
+  line-height: 1.2;
 }
 
 .badge.work {
@@ -345,7 +356,7 @@ button:disabled {
     padding: 0 14px;
   }
 
-  /* Formulario en una columna y botones al 100% */
+  /* Formulario en una columna, botones 100% */
   .form {
     grid-template-columns: 1fr;
   }
@@ -358,7 +369,7 @@ button:disabled {
     width: 100%;
   }
 
-  /* Barra de navegación en una columna */
+  /* Nav a una columna centrada */
   .nav {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -379,7 +390,6 @@ button:disabled {
     width: 100%;
   }
 
-  /* Títulos y contadores más compactos */
   .month-title {
     font-size: clamp(18px, 5vw, 22px);
   }
@@ -388,40 +398,61 @@ button:disabled {
     font-size: 12px;
   }
 
-  /* Calendario: permitir scroll horizontal si el ancho no alcanza */
+  /* Calendario: scroll horizontal si no cabe */
   .calendar {
     overflow-x: auto;
+    overscroll-behavior-x: contain;
   }
 
   .grid {
-    min-width: 560px;
+    min-width: clamp(460px, 92vw, 560px);
   }
 
-  /* ~80px x 7 columnas, ajusta si quieres */
+  /* más flexible que fijo */
 
-  /* Celdas más bajas y badges más pequeños en móvil */
+  /* Celdas y etiquetas más compactas */
   .day {
-    min-height: 80px;
+    min-height: 72px;
     padding: 8px;
   }
 
   .badge {
-    font-size: 10px;
     padding: 2px 6px;
+  }
+
+  /* Modo “compacto” de texto de badges en móvil:
+     ocultamos el texto y lo reemplazamos por abreviado con ::after */
+  .badge {
+    font-size: 0;
+  }
+
+  .badge.work::after {
+    content: "TRABAJA";
+    font-size: 11px;
+  }
+
+  .badge.rest::after {
+    content: "DESCANSA";
+    font-size: 11px;
   }
 }
 
-/* Pequeñísimo (iPhone SE, <360px): aún más compacto */
+/* Móvil muy estrecho (iPhone SE, <360px): aún más compacto */
 @media (max-width: 360px) {
   .grid {
-    min-width: 520px;
+    min-width: 440px;
   }
 
   .day {
-    min-height: 72px;
+    min-height: 68px;
   }
 
-  .badge {
-    font-size: 9px;
+  .badge.work::after {
+    content: "T 17–06";
+  }
+
+  /* aún más corto */
+  .badge.rest::after {
+    content: "D";
   }
 }
