@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendario 12×48 – Vista mensual</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>Calendario de Turnos 12×48</h1>
+      <p class="sub">
+        Ingresa tu <strong>primera fecha de trabajo</strong>. Verás un mes a la vez y podrás navegar por meses.
+      </p>
+    </header>
+
+    <section class="card">
+      <form id="form" class="form">
+        <label class="field">
+          <span>Primera fecha que trabajas (inicio 17:00)</span>
+          <input type="date" id="startDate" required />
+        </label>
+        <div class="actions">
+          <button id="setBtn" type="submit">Establecer inicio</button>
+          <button id="todayBtn" type="button" class="ghost">Usar hoy</button>
+        </div>
+        <p class="hint">
+          Patrón <strong>12×48</strong>: TRABAJAS el día de inicio (17:00–06:00) y luego DESCANSAS 2 días.
+        </p>
+      </form>
+    </section>
+
+    <!-- Controles de navegación (se muestran luego de establecer la fecha) -->
+    <section id="navBar" class="nav card hidden">
+      <div class="nav-left">
+        <button id="prevBtn" class="ghost">&laquo; Anterior</button>
+      </div>
+
+      <div class="nav-center">
+        <div class="month-title" id="monthTitle">Mes Año</div>
+        <div class="nav-inputs">
+          <label class="field-inline">
+            <span>Ir a mes:</span>
+            <input type="month" id="monthPicker" />
+          </label>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button id="nextBtn" class="ghost">Siguiente &raquo;</button>
+      </div>
+    </section>
+
+    <section id="quickBar" class="quick card hidden">
+      <button id="goStartBtn" class="pill">Mes de inicio</button>
+      <button id="goTodayBtn" class="pill">Hoy</button>
+      <div class="counts" id="counts"></div>
+    </section>
+
+    <section class="legend card hidden" id="legend">
+      <div class="legend-item"><span class="dot work"></span>TRABAJA 17:00–06:00</div>
+      <div class="legend-item"><span class="dot rest"></span>DESCANSA</div>
+      <div class="legend-item"><span class="dot before"></span>Antes de la fecha inicial</div>
+      <div class="legend-item"><span class="dot outside"></span>Fuera del mes</div>
+    </section>
+
+    <section id="calendar" class="calendar card hidden"></section>
+
+    <footer class="footer">
+      <small>Vista estática — ideal para GitHub Pages.</small>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
