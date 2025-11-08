@@ -1,10 +1,8 @@
 /* Calendario 12×48 con 3 grupos (A, B, C)
-   - Lunes a viernes: 1 jornada nocturna 17:00–06:00 (un grupo)
+   - Lunes a viernes: 1 jornada nocturna 17:00–06:00
    - Sábado: 2 jornadas → 08:00–15:30 (grupo X), 17:00–06:00 (grupo X+1)
-   - Domingo: 1 jornada 08:00–15:30 (siguiente grupo)
-   - Festivos entre semana (L–V): se tratan como sábado (2 jornadas)
-   - Se parte de una fecha inicial (primer día de trabajo de la secuencia),
-     que se asume como grupo A en la primera jornada.
+   - Domingo: 1 jornada 08:00–15:30
+   - Festivos L–V: se tratan como sábado
 */
 
 (() => {
@@ -16,13 +14,23 @@
 
   let festivos = new Set();
 
-  // ==== Helpers de formato ====
+  // ==== Helpers ====
   const fmtDate = (d) =>
     new Intl.DateTimeFormat("es-GT", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }).format(d);
+
+  const fmtDateLong = (d) =>
+    new Intl.DateTimeFormat("es-ES", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })
+      .format(d)
+      .replace(/^\w/, (c) => c.toUpperCase());
 
   const fmtMonthTitle = (y, m) =>
     new Intl.DateTimeFormat("es-ES", {
@@ -50,7 +58,7 @@
     localStorage.setItem(LS_KEY_FESTIVOS, JSON.stringify([...festivos]));
   }
 
-  // ==== Storage de fecha inicial ====
+  // ==== Storage fecha inicial ====
   const storageStart = {
     get() {
       try {
@@ -72,7 +80,7 @@
     },
   };
 
-  // ==== Elementos de la UI ====
+  // ==== Elementos UI ====
   const startDateInput = $("#startDate");
   const buildBtn = $("#build");
   const todayBtn = $("#today");
@@ -83,6 +91,7 @@
   const holidayDateInput = $("#holidayDate");
   const addHolidayBtn = $("#addHoliday");
   const holidayList = $("#holidayList");
+  const dayInfoText = $("#dayInfoText");
 
   // Tabs
   const tabBtnConfig = $("#tabBtnConfig");
@@ -95,14 +104,12 @@
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth();
   let startDateMidnight = null;
-  let startDateTime = null;
 
   // ==== Tabs ====
   function setActiveTab(tab) {
     if (tab === "config") {
       tabConfig.classList.remove("hidden");
       tabCalendar.classList.add("hidden");
-
       tabBtnConfig.className =
         "flex-1 px-3 py-2 text-center border border-line border-b-0 rounded-t-xl bg-card font-medium";
       tabBtnCalendar.className =
@@ -110,7 +117,6 @@
     } else {
       tabConfig.classList.add("hidden");
       tabCalendar.classList.remove("hidden");
-
       tabBtnCalendar.className =
         "flex-1 px-3 py-2 text-center border border-line border-b-0 rounded-t-xl bg-card font-medium";
       tabBtnConfig.className =
@@ -128,9 +134,6 @@
     const d0 = new Date(iso);
     d0.setHours(0, 0, 0, 0);
     startDateMidnight = d0;
-    const d17 = new Date(d0);
-    d17.setHours(17, 0, 0, 0);
-    startDateTime = d17;
   }
 
   function loadStartFromStorage() {
@@ -141,21 +144,18 @@
     startDateInput.value = toYMD(d);
     d.setHours(0, 0, 0, 0);
     startDateMidnight = new Date(d);
-    startDateTime = new Date(d);
-    startDateTime.setHours(17, 0, 0, 0);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
     return true;
   }
 
-  // ==== Generar horario del mes ====
+  // ==== Horario del mes ====
   function buildScheduleMapForMonth(year, month) {
     const schedule = new Map();
     if (!startDateMidnight) return schedule;
 
     const lastOfMonth = new Date(year, month + 1, 0);
     lastOfMonth.setHours(0, 0, 0, 0);
-
     if (startDateMidnight.getTime() > lastOfMonth.getTime()) return schedule;
 
     let currentDate = new Date(startDateMidnight);
@@ -174,20 +174,17 @@
 
       if (currentDate.getTime() >= startDateMidnight.getTime()) {
         if (isSaturday || isFestivoWeekday) {
-          // Día tipo sábado (o festivo L–V): dos jornadas
           const g1 = GROUPS[groupIndex % 3];
           groupIndex++;
           const g2 = GROUPS[groupIndex % 3];
           groupIndex++;
-          shifts.push({ group: g1, hours: "08:00–15:30" });
-          shifts.push({ group: g2, hours: "17:00–06:00" });
+          shifts.push({ group: g1, hours: "08:00–15:30", label: "Mañana" });
+          shifts.push({ group: g2, hours: "17:00–06:00", label: "Tarde" });
         } else if (isSunday) {
-          // Domingo: una jornada 08:00–15:30
           const g = GROUPS[groupIndex % 3];
           groupIndex++;
           shifts.push({ group: g, hours: "08:00–15:30" });
         } else {
-          // L–V normal: una jornada nocturna
           const g = GROUPS[groupIndex % 3];
           groupIndex++;
           shifts.push({ group: g, hours: "17:00–06:00" });
@@ -205,7 +202,7 @@
     return schedule;
   }
 
-  // ==== UI de festivos ====
+  // ==== UI festivos ====
   function renderFestivosUI() {
     holidayList.innerHTML = "";
     if (festivos.size === 0) {
@@ -230,6 +227,27 @@
       });
   }
 
+  // ==== Panel de detalle ====
+  function showDayInfo(date, shifts) {
+    if (!shifts || shifts.length === 0) {
+      dayInfoText.textContent = `${fmtDateLong(date)} · Sin turno asignado.`;
+      return;
+    }
+
+    const lines = shifts.map((s) => {
+      if (s.label) {
+        return `${s.label} Grupo ${s.group} (${s.hours})`;
+      }
+      return `Grupo ${s.group} (${s.hours})`;
+    });
+
+    dayInfoText.innerHTML =
+      `<div class="font-semibold mb-1">${fmtDateLong(date)}</div>` +
+      `<div class="space-y-0.5">${lines
+        .map((l) => `<div>${l}</div>`)
+        .join("")}</div>`;
+  }
+
   // ==== Render calendario ====
   function render() {
     monthTitle.textContent = fmtMonthTitle(viewYear, viewMonth);
@@ -243,7 +261,7 @@
     const mondayBased = (jsDow + 6) % 7;
     for (let i = 0; i < mondayBased; i++) {
       const e = document.createElement("div");
-      e.className = "h-12 sm:h-16";
+      e.className = "h-16 sm:h-20";
       calendar.appendChild(e);
     }
 
@@ -259,31 +277,24 @@
       const isYellow = (isWeekend || isFestivo) && shifts.length > 0;
 
       const classes = [
-        "relative h-12 sm:h-16 rounded-lg border text-xs sm:text-sm",
-        "flex flex-col items-center justify-center",
+        "relative flex flex-col items-center justify-center",
+        "h-16 sm:h-20",
+        "rounded-3xl text-[10px] sm:text-xs",
         "text-slate-900",
+        "shadow-[0_0_0_1px_rgba(15,23,42,0.03)]",
+        "px-1",
       ];
 
-      // Borde y ring según grupo principal (primer turno del día)
-      if (shifts.length > 0) {
-        const mainGroup = shifts[0].group;
-        if (mainGroup === "A") {
-          classes.push("ring-2 ring-blue-500 border-blue-500");
-        } else if (mainGroup === "B") {
-          classes.push("ring-2 ring-green-500 border-green-500");
-        } else if (mainGroup === "C") {
-          classes.push("ring-2 ring-red-500 border-red-500");
-        } else {
-          classes.push("ring-2 ring-accent border-accent");
-        }
-      } else {
-        classes.push("border-line bg-white");
-      }
-
-      if (isYellow) {
+      if (shifts.length === 0) {
+        classes.push("bg-white border border-line");
+      } else if (isYellow) {
         classes.push("bg-amber-200");
-      } else if (shifts.length === 0) {
-        classes.push("bg-white");
+      } else {
+        const mainGroup = shifts[0].group;
+        if (mainGroup === "A") classes.push("bg-blue-100");
+        else if (mainGroup === "B") classes.push("bg-green-100");
+        else if (mainGroup === "C") classes.push("bg-red-100");
+        else classes.push("bg-slate-100");
       }
 
       if (isToday) {
@@ -292,46 +303,44 @@
 
       const cell = document.createElement("div");
       cell.className = classes.join(" ");
+      cell.dataset.date = ymd; // para el click
 
       const label = document.createElement("div");
       label.textContent = String(day);
-      label.className = "font-semibold leading-tight";
+      label.className = "font-semibold text-sm sm:text-base leading-tight mb-0.5";
       cell.appendChild(label);
 
       const sub = document.createElement("div");
-      sub.className =
-        "mt-0.5 text-[9px] sm:text-[10px] leading-tight text-center";
+      sub.className = "text-[9px] sm:text-[10px] leading-tight text-center";
 
       if (!shifts.length) {
         sub.innerHTML = "&nbsp;";
       } else if (shifts.length === 1) {
         const s = shifts[0];
-        sub.innerHTML = `<span class="font-semibold">Grupo ${s.group}</span> (${s.hours})`;
-      } else if (shifts.length === 2) {
-        const s1 = shifts[0];
-        const s2 = shifts[1];
-        sub.innerHTML =
-          `Mañana <span class="font-semibold">Grupo ${s1.group}</span> (${s1.hours})` +
-          "<br>" +
-          `Tarde <span class="font-semibold">Grupo ${s2.group}</span> (${s2.hours})`;
+        sub.innerHTML = `<span class="font-semibold">Grupo ${s.group}</span>`;
+      } else {
+        const g1 = shifts[0].group;
+        const g2 = shifts[1].group;
+        sub.innerHTML = `<span class="font-semibold">${g1} / ${g2}</span>`;
       }
 
       cell.appendChild(sub);
 
-      if (shifts.length) {
-        const resumen = shifts
-          .map((s) => `Grupo ${s.group} (${s.hours})`)
-          .join(" · ");
-        cell.title = `${fmtDate(date)} · ${resumen}`;
-      } else {
-        cell.title = fmtDate(date);
-      }
-
       calendar.appendChild(cell);
     }
+
+    // Delegación de eventos para los días
+    calendar.onclick = (ev) => {
+      const cell = ev.target.closest("[data-date]");
+      if (!cell) return;
+      const ymd = cell.dataset.date;
+      const date = new Date(`${ymd}T00:00:00`);
+      const shifts = scheduleMap.get(ymd) || [];
+      showDayInfo(date, shifts);
+    };
   }
 
-  // ==== Eventos ====
+  // ==== Eventos globales ====
   buildBtn.addEventListener("click", () => {
     if (!startDateInput.value) {
       alert("Selecciona la fecha inicial");
@@ -390,7 +399,7 @@
     render();
   });
 
-  // ==== Inicialización ====
+  // ==== Init ====
   loadFestivos();
   renderFestivosUI();
 

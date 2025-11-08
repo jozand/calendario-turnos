@@ -150,8 +150,8 @@
       <section class="mb-3 flex flex-col gap-2 text-xs text-muted">
         <div class="flex flex-wrap gap-4">
           <div class="flex items-center gap-2">
-            <span class="inline-block size-3 rounded ring-2 ring-accent bg-blue-50"></span>
-            <span>Día con turno(s)</span>
+            <span class="inline-block size-3 rounded bg-blue-200"></span>
+            <span>Día con turno (A/B/C)</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="inline-block size-3 rounded border border-line bg-white"></span>
@@ -159,20 +159,20 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="inline-block size-3 rounded bg-amber-200 border border-amber-300"></span>
-            <span>Sábado / Domingo / Festivo (color amarillo)</span>
+            <span>Sábado / Domingo / Festivo</span>
           </div>
         </div>
         <div class="flex flex-wrap gap-4">
           <div class="flex items-center gap-1">
-            <span class="inline-block size-3 rounded bg-blue-500"></span>
+            <span class="inline-block size-3 rounded bg-blue-400"></span>
             <span>Grupo A</span>
           </div>
           <div class="flex items-center gap-1">
-            <span class="inline-block size-3 rounded bg-green-500"></span>
+            <span class="inline-block size-3 rounded bg-green-400"></span>
             <span>Grupo B</span>
           </div>
           <div class="flex items-center gap-1">
-            <span class="inline-block size-3 rounded bg-red-500"></span>
+            <span class="inline-block size-3 rounded bg-red-400"></span>
             <span>Grupo C</span>
           </div>
         </div>
@@ -193,6 +193,13 @@
 
         <!-- Celdas del mes -->
         <div id="calendar" class="grid grid-cols-7 gap-1 text-center select-none"></div>
+      </section>
+
+      <!-- Panel de detalle del día -->
+      <section id="dayInfo" class="mt-3 bg-card border border-line rounded-2xl p-3 text-xs sm:text-sm text-slate-700">
+        <div id="dayInfoText">
+          Toca un día del calendario para ver los detalles del turno.
+        </div>
       </section>
     </section>
 
