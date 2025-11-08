@@ -57,9 +57,9 @@
       </div>
     </section>
 
-    <!-- TAB: Configuración (primera fecha + festivos) -->
+    <!-- TAB: Configuración (fecha + grupo + festivos) -->
     <section id="tab-config" class="space-y-4">
-      <!-- Controles de fecha inicial -->
+      <!-- Fecha inicial + grupo -->
       <section class="bg-card border border-line rounded-2xl p-4 shadow-sm">
         <form id="form" class="space-y-3">
           <label class="block">
@@ -71,6 +71,46 @@
               required
             />
           </label>
+
+          <!-- Selector de grupo -->
+          <div>
+            <span class="block text-sm mb-1">¿A qué grupo perteneces?</span>
+            <div class="flex gap-3 text-xs">
+              <label class="inline-flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="grupoInicio"
+                  value="A"
+                  id="groupA"
+                  class="h-3 w-3 text-accent"
+                />
+                <span>Grupo A</span>
+              </label>
+              <label class="inline-flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="grupoInicio"
+                  value="B"
+                  id="groupB"
+                  class="h-3 w-3 text-accent"
+                />
+                <span>Grupo B</span>
+              </label>
+              <label class="inline-flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="grupoInicio"
+                  value="C"
+                  id="groupC"
+                  class="h-3 w-3 text-accent"
+                />
+                <span>Grupo C</span>
+              </label>
+            </div>
+            <p class="text-[11px] text-muted mt-1">
+              Este grupo se usará como primer turno de la secuencia.
+            </p>
+          </div>
 
           <div class="flex gap-2">
             <button
@@ -180,7 +220,6 @@
 
       <!-- Calendario -->
       <section>
-        <!-- Cabeceras de días -->
         <div class="grid grid-cols-7 text-center text-[11px] sm:text-xs text-muted select-none">
           <div class="py-2">L</div>
           <div class="py-2">M</div>
@@ -191,11 +230,10 @@
           <div class="py-2">D</div>
         </div>
 
-        <!-- Celdas del mes -->
         <div id="calendar" class="grid grid-cols-7 gap-1 text-center select-none"></div>
       </section>
 
-      <!-- Panel de detalle del día -->
+      <!-- Panel de detalle -->
       <section id="dayInfo" class="mt-3 bg-card border border-line rounded-2xl p-3 text-xs sm:text-sm text-slate-700">
         <div id="dayInfoText">
           Toca un día del calendario para ver los detalles del turno.

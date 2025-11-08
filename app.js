@@ -10,6 +10,7 @@
 
   const LS_KEY_START = "cal12x48_startDateISO";
   const LS_KEY_FESTIVOS = "cal12x48_festivos_v1";
+  const LS_KEY_GROUP = "cal12x48_startGroup";
   const GROUPS = ["A", "B", "C"];
 
   let festivos = new Set();
@@ -58,7 +59,7 @@
     localStorage.setItem(LS_KEY_FESTIVOS, JSON.stringify([...festivos]));
   }
 
-  // ==== Storage fecha inicial ====
+  // ==== Storage fecha inicial y grupo ====
   const storageStart = {
     get() {
       try {
@@ -80,6 +81,19 @@
     },
   };
 
+  const storageGroup = {
+    get() {
+      const g = localStorage.getItem(LS_KEY_GROUP);
+      if (g === "A" || g === "B" || g === "C") return g;
+      return "A";
+    },
+    set(g) {
+      if (g === "A" || g === "B" || g === "C") {
+        localStorage.setItem(LS_KEY_GROUP, g);
+      }
+    },
+  };
+
   // ==== Elementos UI ====
   const startDateInput = $("#startDate");
   const buildBtn = $("#build");
@@ -93,11 +107,14 @@
   const holidayList = $("#holidayList");
   const dayInfoText = $("#dayInfoText");
 
-  // Tabs
   const tabBtnConfig = $("#tabBtnConfig");
   const tabBtnCalendar = $("#tabBtnCalendar");
   const tabConfig = $("#tab-config");
   const tabCalendar = $("#tab-calendar");
+
+  const groupARadio = $("#groupA");
+  const groupBRadio = $("#groupB");
+  const groupCRadio = $("#groupC");
 
   // ==== Estado ====
   const now = new Date();
@@ -127,6 +144,30 @@
   tabBtnConfig.addEventListener("click", () => setActiveTab("config"));
   tabBtnCalendar.addEventListener("click", () => setActiveTab("calendar"));
 
+  // ==== Grupo seleccionado en UI ====
+  function getSelectedGroupFromUI() {
+    if (groupARadio.checked) return "A";
+    if (groupBRadio.checked) return "B";
+    if (groupCRadio.checked) return "C";
+    return null;
+  }
+
+  function setSelectedGroupInUI(g) {
+    groupARadio.checked = g === "A";
+    groupBRadio.checked = g === "B";
+    groupCRadio.checked = g === "C";
+  }
+
+  [groupARadio, groupBRadio, groupCRadio].forEach((input) => {
+    input.addEventListener("change", () => {
+      const g = getSelectedGroupFromUI();
+      if (g) {
+        storageGroup.set(g);
+        if (startDateMidnight) render();
+      }
+    });
+  });
+
   // ==== Fecha inicial ====
   function setStartFromYMD(yyyy_mm_dd) {
     const iso = `${yyyy_mm_dd}T00:00:00`;
@@ -146,6 +187,11 @@
     startDateMidnight = new Date(d);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
+
+    // cargar grupo guardado
+    const g = storageGroup.get();
+    setSelectedGroupInUI(g);
+
     return true;
   }
 
@@ -160,7 +206,11 @@
 
     let currentDate = new Date(startDateMidnight);
     currentDate.setHours(0, 0, 0, 0);
-    let groupIndex = 0;
+
+    // grupo inicial según configuración
+    const startGroup = storageGroup.get(); // "A"/"B"/"C"
+    let groupIndex = GROUPS.indexOf(startGroup);
+    if (groupIndex < 0) groupIndex = 0;
 
     while (currentDate.getTime() <= lastOfMonth.getTime()) {
       const key = toYMD(currentDate);
@@ -265,6 +315,8 @@
       calendar.appendChild(e);
     }
 
+    calendar.onclick = null; // limpia delegación previa
+
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(viewYear, viewMonth, day);
       date.setHours(0, 0, 0, 0);
@@ -303,7 +355,7 @@
 
       const cell = document.createElement("div");
       cell.className = classes.join(" ");
-      cell.dataset.date = ymd; // para el click
+      cell.dataset.date = ymd;
 
       const label = document.createElement("div");
       label.textContent = String(day);
@@ -325,11 +377,10 @@
       }
 
       cell.appendChild(sub);
-
       calendar.appendChild(cell);
     }
 
-    // Delegación de eventos para los días
+    // Delegación para mostrar detalle
     calendar.onclick = (ev) => {
       const cell = ev.target.closest("[data-date]");
       if (!cell) return;
@@ -346,6 +397,14 @@
       alert("Selecciona la fecha inicial");
       return;
     }
+
+    let g = getSelectedGroupFromUI();
+    if (!g) {
+      g = "A"; // valor por defecto si no marca nada
+      setSelectedGroupInUI(g);
+    }
+    storageGroup.set(g);
+
     setStartFromYMD(startDateInput.value);
     viewYear = startDateMidnight.getFullYear();
     viewMonth = startDateMidnight.getMonth();
@@ -357,6 +416,14 @@
     const t = new Date();
     const ymd = toYMD(t);
     startDateInput.value = ymd;
+
+    let g = getSelectedGroupFromUI();
+    if (!g) {
+      g = storageGroup.get(); // lo que ya tenía guardado
+      setSelectedGroupInUI(g);
+    }
+    storageGroup.set(g);
+
     setStartFromYMD(ymd);
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
@@ -404,6 +471,8 @@
   renderFestivosUI();
 
   if (!loadStartFromStorage()) {
+    // si no hay nada guardado, grupo A por defecto
+    setSelectedGroupInUI("A");
     viewYear = now.getFullYear();
     viewMonth = now.getMonth();
   }
