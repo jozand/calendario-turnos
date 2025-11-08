@@ -8,7 +8,6 @@
   <!-- Tailwind por CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    // Paleta elegante y neutra
     tailwind.config = {
       theme: {
         extend: {
@@ -28,102 +27,177 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="min-h-screen bg-bg text-fg antialiased">
-
   <main class="max-w-md mx-auto px-4 py-6">
     <header class="mb-5">
       <h1 class="text-2xl font-semibold leading-tight">Calendario de Turnos 12×48</h1>
       <p class="text-sm text-muted mt-1">
-        Ingresa tu <strong>primera fecha de trabajo</strong> (el turno inicia <strong>17:00</strong> y termina <strong>05:00</strong> del día siguiente).
+        Hay tres grupos (<span class="font-semibold">A</span>, <span class="font-semibold">B</span>, <span class="font-semibold">C</span>).
+        De lunes a viernes hay una jornada nocturna; los sábados se dividen en dos jornadas; los domingos una jornada de
+        <strong>08:00–15:30</strong>; los festivos entre semana se tratan como sábado.
       </p>
     </header>
 
-    <!-- Controles -->
-    <section class="bg-card border border-line rounded-2xl p-4 shadow-sm">
-      <form id="form" class="space-y-3">
-        <label class="block">
-          <span class="block text-sm mb-1">Primera fecha que trabajas</span>
+    <!-- Tabs -->
+    <section class="mb-4">
+      <div class="flex border-b border-line text-sm">
+        <button
+          id="tabBtnConfig"
+          data-tab="config"
+          class="flex-1 px-3 py-2 text-center border border-line border-b-0 rounded-t-xl bg-card font-medium"
+        >
+          Configuración
+        </button>
+        <button
+          id="tabBtnCalendar"
+          data-tab="calendar"
+          class="flex-1 px-3 py-2 text-center border border-transparent rounded-t-xl text-muted hover:bg-slate-100"
+        >
+          Calendario
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB: Configuración (primera fecha + festivos) -->
+    <section id="tab-config" class="space-y-4">
+      <!-- Controles de fecha inicial -->
+      <section class="bg-card border border-line rounded-2xl p-4 shadow-sm">
+        <form id="form" class="space-y-3">
+          <label class="block">
+            <span class="block text-sm mb-1">Primera fecha que trabajas (inicio de secuencia)</span>
+            <input
+              type="date"
+              id="startDate"
+              class="w-full rounded-xl bg-white border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              required
+            />
+          </label>
+
+          <div class="flex gap-2">
+            <button
+              id="build"
+              type="button"
+              class="flex-1 rounded-xl px-3 py-2 text-sm font-medium bg-accent text-white hover:opacity-90 active:opacity-80"
+              title="Calcular turnos desde la fecha ingresada"
+            >
+              Calcular turnos
+            </button>
+
+            <button
+              id="today"
+              type="button"
+              class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
+              title="Usar hoy como inicio y ver mes actual"
+            >
+              Hoy
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Días festivos -->
+      <section class="bg-card border border-line rounded-2xl p-4 text-xs sm:text-sm">
+        <div class="flex flex-col gap-1">
+          <h3 class="font-semibold text-sm">Días festivos</h3>
+          <p class="text-[11px] text-muted">
+            Los festivos que caen entre semana (L–V) se tratarán como sábado:
+            dos jornadas (08:00–15:30 y 17:00–06:00).
+          </p>
+        </div>
+
+        <div class="mt-2 flex gap-2 items-center">
           <input
             type="date"
-            id="startDate"
-            class="w-full rounded-xl bg-white border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-            required
+            id="holidayDate"
+            class="flex-1 rounded-xl bg-white border border-line px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
           />
-        </label>
-
-        <div class="flex gap-2">
           <button
-            id="build"
+            id="addHoliday"
             type="button"
-            class="flex-1 rounded-xl px-3 py-2 text-sm font-medium bg-accent text-white hover:opacity-90 active:opacity-80"
-            title="Calcular turnos desde la fecha ingresada"
+            class="rounded-xl px-3 py-1.5 text-xs border border-line hover:bg-gray-50"
           >
-            Calcular turnos
-          </button>
-
-          <button
-            id="today"
-            type="button"
-            class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
-            title="Hoy"
-          >
-            Hoy
+            Agregar
           </button>
         </div>
-      </form>
+
+        <div id="holidayList" class="mt-2 flex flex-wrap gap-1 text-[11px]"></div>
+      </section>
     </section>
 
-    <!-- Navegación de mes -->
-    <nav class="mt-5 flex items-center justify-between gap-2">
-      <button
-        id="prev"
-        class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
-        title="Mes anterior"
-      >
-        &larr; Mes
-      </button>
+    <!-- TAB: Calendario -->
+    <section id="tab-calendar" class="hidden">
+      <!-- Navegación de mes -->
+      <nav class="mb-3 mt-1 flex items-center justify-between gap-2">
+        <button
+          id="prev"
+          class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
+          title="Mes anterior"
+        >
+          &larr; Mes
+        </button>
 
-      <h2 id="monthTitle" class="text-base font-semibold text-center flex-1"></h2>
+        <h2 id="monthTitle" class="text-base font-semibold text-center flex-1"></h2>
 
-      <button
-        id="next"
-        class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
-        title="Mes siguiente"
-      >
-        Mes &rarr;
-      </button>
-    </nav>
+        <button
+          id="next"
+          class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50"
+          title="Mes siguiente"
+        >
+          Mes &rarr;
+        </button>
+      </nav>
 
-    <!-- Leyenda -->
-    <section class="mt-3 flex items-center gap-4 text-xs text-muted">
-      <div class="flex items-center gap-2">
-        <span class="inline-block size-3 rounded ring-2 ring-accent"></span>
-        <span>Turno (17:00–05:00)</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="inline-block size-3 rounded border border-line bg-white"></span>
-        <span>Día normal</span>
-      </div>
-    </section>
+      <!-- Leyenda -->
+      <section class="mb-3 flex flex-col gap-2 text-xs text-muted">
+        <div class="flex flex-wrap gap-4">
+          <div class="flex items-center gap-2">
+            <span class="inline-block size-3 rounded ring-2 ring-accent bg-blue-50"></span>
+            <span>Día con turno(s)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block size-3 rounded border border-line bg-white"></span>
+            <span>Sin turno (antes de la fecha inicial)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block size-3 rounded bg-amber-200 border border-amber-300"></span>
+            <span>Sábado / Domingo / Festivo (color amarillo)</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <div class="flex items-center gap-1">
+            <span class="inline-block size-3 rounded bg-blue-500"></span>
+            <span>Grupo A</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="inline-block size-3 rounded bg-green-500"></span>
+            <span>Grupo B</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="inline-block size-3 rounded bg-red-500"></span>
+            <span>Grupo C</span>
+          </div>
+        </div>
+      </section>
 
-    <!-- Calendario -->
-    <section class="mt-2">
-      <!-- Cabeceras de días -->
-      <div class="grid grid-cols-7 text-center text-[11px] sm:text-xs text-muted select-none">
-        <div class="py-2">L</div>
-        <div class="py-2">M</div>
-        <div class="py-2">X</div>
-        <div class="py-2">J</div>
-        <div class="py-2">V</div>
-        <div class="py-2">S</div>
-        <div class="py-2">D</div>
-      </div>
+      <!-- Calendario -->
+      <section>
+        <!-- Cabeceras de días -->
+        <div class="grid grid-cols-7 text-center text-[11px] sm:text-xs text-muted select-none">
+          <div class="py-2">L</div>
+          <div class="py-2">M</div>
+          <div class="py-2">X</div>
+          <div class="py-2">J</div>
+          <div class="py-2">V</div>
+          <div class="py-2">S</div>
+          <div class="py-2">D</div>
+        </div>
 
-      <!-- Celdas del mes -->
-      <div id="calendar" class="grid grid-cols-7 gap-1 text-center select-none"></div>
+        <!-- Celdas del mes -->
+        <div id="calendar" class="grid grid-cols-7 gap-1 text-center select-none"></div>
+      </section>
     </section>
 
     <footer class="mt-6 text-center text-[11px] sm:text-xs text-muted">
-      Formato: dd/mm/yyyy · Calculos de turnos 12x48 ·
+      Cálculo de turnos 12×48 con grupos A, B y C · Sábados / domingos / festivos en amarillo
     </footer>
   </main>
 
