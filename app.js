@@ -8,6 +8,7 @@
 (() => {
   const $ = (sel) => document.querySelector(sel);
 
+  // ==== CONSTANTES ====
   const LS_KEY_START = "cal12x48_startDateISO";
   const LS_KEY_FESTIVOS = "cal12x48_festivos_v1";
   const LS_KEY_GROUP = "cal12x48_startGroup";
@@ -43,10 +44,10 @@
 
   const toYMD = (d) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate(),
+      d.getDate()
     ).padStart(2, "0")}`;
 
-  // ==== Festivos ====
+  // ==== Feriados ====
   function loadFestivos() {
     try {
       const raw = localStorage.getItem(LS_KEY_FESTIVOS);
@@ -59,42 +60,34 @@
     localStorage.setItem(LS_KEY_FESTIVOS, JSON.stringify([...festivos]));
   }
 
-  // ==== Storage fecha inicial y grupo ====
+  // ==== LocalStorage fecha inicial ====
   const storageStart = {
     get() {
       try {
         const v = localStorage.getItem(LS_KEY_START);
         if (v) return v;
       } catch {}
-      const m = document.cookie.match(
-        new RegExp("(^| )" + LS_KEY_START + "=([^;]+)"),
-      );
-      return m ? decodeURIComponent(m[2]) : null;
+      return null;
     },
     set(iso) {
       localStorage.setItem(LS_KEY_START, iso);
-      const exp = new Date();
-      exp.setFullYear(exp.getFullYear() + 1);
-      document.cookie = `${LS_KEY_START}=${encodeURIComponent(
-        iso,
-      )}; expires=${exp.toUTCString()}; path=/; SameSite=Lax`;
     },
   };
 
+  // ==== LocalStorage grupo ====
   const storageGroup = {
     get() {
       const g = localStorage.getItem(LS_KEY_GROUP);
-      if (g === "A" || g === "B" || g === "C") return g;
-      return "A";
+      return g === "A" || g === "B" || g === "C" ? g : "A";
     },
     set(g) {
-      if (g === "A" || g === "B" || g === "C") {
+      if (["A", "B", "C"].includes(g)) {
         localStorage.setItem(LS_KEY_GROUP, g);
       }
     },
   };
 
-  // ==== Elementos UI ====
+  // ==== Elementos HTML ====
   const startDateInput = $("#startDate");
   const buildBtn = $("#build");
   const todayBtn = $("#today");
@@ -102,9 +95,11 @@
   const nextBtn = $("#next");
   const monthTitle = $("#monthTitle");
   const calendar = $("#calendar");
+
   const holidayDateInput = $("#holidayDate");
   const addHolidayBtn = $("#addHoliday");
   const holidayList = $("#holidayList");
+
   const dayInfoText = $("#dayInfoText");
 
   const tabBtnConfig = $("#tabBtnConfig");
@@ -115,6 +110,14 @@
   const groupARadio = $("#groupA");
   const groupBRadio = $("#groupB");
   const groupCRadio = $("#groupC");
+
+  const legendA = $("#legendA");
+  const legendB = $("#legendB");
+  const legendC = $("#legendC");
+
+  const exportBtn = $("#exportPDF");
+  const printArea = $("#print-area");
+  const calendarCard = $("#calendarCard");
 
   // ==== Estado ====
   const now = new Date();
@@ -143,20 +146,16 @@
 
   tabBtnConfig.addEventListener("click", () => setActiveTab("config"));
 
-  // 👉 AL ABRIR TAB CALENDARIO → SIEMPRE MES ACTUAL Y LIMPIAR DETALLE
   tabBtnCalendar.addEventListener("click", () => {
     const t = new Date();
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
-
-    dayInfoText.textContent =
-      "Toca un día del calendario para ver los detalles del turno.";
-
+    dayInfoText.textContent = "Toca un día del calendario para ver los detalles del turno.";
     render();
     setActiveTab("calendar");
   });
 
-  // ==== Grupo seleccionado en UI ====
+  // ==== Grupo ====
   function getSelectedGroupFromUI() {
     if (groupARadio.checked) return "A";
     if (groupBRadio.checked) return "B";
@@ -170,17 +169,17 @@
     groupCRadio.checked = g === "C";
   }
 
-  [groupARadio, groupBRadio, groupCRadio].forEach((input) => {
-    input.addEventListener("change", () => {
+  [groupARadio, groupBRadio, groupCRadio].forEach((i) =>
+    i.addEventListener("change", () => {
       const g = getSelectedGroupFromUI();
       if (g) {
         storageGroup.set(g);
         if (startDateMidnight) render();
       }
-    });
-  });
+    })
+  );
 
-  // ==== Fecha inicial ====
+  // ==== Fecha Inicial ====
   function setStartFromYMD(yyyy_mm_dd) {
     const iso = `${yyyy_mm_dd}T00:00:00`;
     storageStart.set(iso);
@@ -195,16 +194,13 @@
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return false;
     startDateInput.value = toYMD(d);
-    d.setHours(0, 0, 0, 0);
-    startDateMidnight = new Date(d);
-
-    const g = storageGroup.get();
-    setSelectedGroupInUI(g);
-
+    startDateMidnight = d;
+    startDateMidnight.setHours(0, 0, 0, 0);
+    setSelectedGroupInUI(storageGroup.get());
     return true;
   }
 
-  // ==== Horario del mes ====
+  // ==== Construir horarios del mes ====
   function buildScheduleMapForMonth(year, month) {
     const schedule = new Map();
     if (!startDateMidnight) return schedule;
@@ -218,7 +214,6 @@
 
     const startGroup = storageGroup.get();
     let groupIndex = GROUPS.indexOf(startGroup);
-    if (groupIndex < 0) groupIndex = 0;
 
     while (currentDate.getTime() <= lastOfMonth.getTime()) {
       const key = toYMD(currentDate);
@@ -228,6 +223,7 @@
       const isSaturday = dow === 6;
       const isSunday = dow === 0;
       const isFestivoWeekday = isFestivo && isWeekday;
+
       const shifts = [];
 
       if (currentDate.getTime() >= startDateMidnight.getTime()) {
@@ -260,29 +256,23 @@
     return schedule;
   }
 
-  // ==== UI festivos ====
+  // ==== Festivos UI ====
   function renderFestivosUI() {
     holidayList.innerHTML = "";
     if (festivos.size === 0) {
-      const span = document.createElement("span");
-      span.textContent = "Sin festivos guardados";
-      span.className = "text-muted";
-      holidayList.appendChild(span);
+      holidayList.innerHTML = `<span class="text-muted">Sin festivos guardados</span>`;
       return;
     }
 
-    [...festivos]
-      .sort()
-      .forEach((ymd) => {
-        const d = new Date(`${ymd}T00:00:00`);
-        const b = document.createElement("button");
-        b.dataset.date = ymd;
-        b.type = "button";
-        b.className =
-          "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-muted border border-line hover:bg-slate-200";
-        b.innerHTML = `<span>${fmtDate(d)}</span><span class='text-[10px]'>&times;</span>`;
-        holidayList.appendChild(b);
-      });
+    [...festivos].sort().forEach((ymd) => {
+      const d = new Date(`${ymd}T00:00:00`);
+      const btn = document.createElement("button");
+      btn.dataset.date = ymd;
+      btn.className =
+        "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-muted border border-line hover:bg-slate-200";
+      btn.innerHTML = `<span>${fmtDate(d)}</span><span class='text-[10px]'>&times;</span>`;
+      holidayList.appendChild(btn);
+    });
   }
 
   // ==== Panel de detalle ====
@@ -292,21 +282,33 @@
       return;
     }
 
-    const lines = shifts.map((s) => {
-      if (s.label) {
-        return `${s.label} Grupo ${s.group} (${s.hours})`;
-      }
-      return `Grupo ${s.group} (${s.hours})`;
-    });
+    const lines = shifts.map((s) =>
+      s.label ? `${s.label} – Grupo ${s.group} (${s.hours})` : `Grupo ${s.group} (${s.hours})`
+    );
 
     dayInfoText.innerHTML =
       `<div class="font-semibold mb-1">${fmtDateLong(date)}</div>` +
-      `<div class="space-y-0.5">${lines
-        .map((l) => `<div>${l}</div>`)
-        .join("")}</div>`;
+      `<div class="space-y-0.5">${lines.map((l) => `<div>${l}</div>`).join("")}</div>`;
   }
 
-  // ==== Render calendario ====
+  // ==== Actualizar conteo de turnos ====
+  function updateTurnCounts(schedule) {
+    let a = 0, b = 0, c = 0;
+
+    schedule.forEach((shifts) => {
+      shifts.forEach((s) => {
+        if (s.group === "A") a++;
+        if (s.group === "B") b++;
+        if (s.group === "C") c++;
+      });
+    });
+
+    legendA.textContent = `Grupo A (${a})`;
+    legendB.textContent = `Grupo B (${b})`;
+    legendC.textContent = `Grupo C (${c})`;
+  }
+
+  // ==== Render del calendario ====
   function render() {
     monthTitle.textContent = fmtMonthTitle(viewYear, viewMonth);
     calendar.innerHTML = "";
@@ -315,32 +317,15 @@
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const scheduleMap = buildScheduleMapForMonth(viewYear, viewMonth);
 
-    // ⭐⭐⭐ CONTAR TURNOS POR MES ⭐⭐⭐
-    let countA = 0,
-      countB = 0,
-      countC = 0;
-
-    scheduleMap.forEach((shifts) => {
-      shifts.forEach((s) => {
-        if (s.group === "A") countA++;
-        else if (s.group === "B") countB++;
-        else if (s.group === "C") countC++;
-      });
-    });
-
-    // Actualizar leyenda
-    $("#turnosA").textContent = countA;
-    $("#turnosB").textContent = countB;
-    $("#turnosC").textContent = countC;
-
-    // ============================
+    updateTurnCounts(scheduleMap);
 
     const jsDow = first.getDay();
     const mondayBased = (jsDow + 6) % 7;
+
     for (let i = 0; i < mondayBased; i++) {
-      const e = document.createElement("div");
-      e.className = "h-16 sm:h-20";
-      calendar.appendChild(e);
+      const empty = document.createElement("div");
+      empty.className = "h-16 sm:h-20";
+      calendar.appendChild(empty);
     }
 
     calendar.onclick = null;
@@ -370,16 +355,13 @@
       } else if (isYellow) {
         classes.push("bg-amber-200");
       } else {
-        const mainGroup = shifts[0].group;
-        if (mainGroup === "A") classes.push("bg-blue-100");
-        else if (mainGroup === "B") classes.push("bg-green-100");
-        else if (mainGroup === "C") classes.push("bg-red-100");
-        else classes.push("bg-slate-100");
+        const g = shifts[0].group;
+        if (g === "A") classes.push("bg-blue-100");
+        if (g === "B") classes.push("bg-green-100");
+        if (g === "C") classes.push("bg-red-100");
       }
 
-      if (isToday) {
-        classes.push("outline outline-1 outline-accent/40");
-      }
+      if (isToday) classes.push("outline outline-1 outline-accent/40");
 
       const cell = document.createElement("div");
       cell.className = classes.join(" ");
@@ -387,36 +369,29 @@
 
       const label = document.createElement("div");
       label.textContent = String(day);
-      label.className =
-        "font-semibold text-sm sm:text-base leading-tight mb-0.5";
+      label.className = "font-semibold text-sm sm:text-base leading-tight mb-0.5";
       cell.appendChild(label);
 
       const sub = document.createElement("div");
-      sub.className =
-        "text-[9px] sm:text-[10px] leading-tight text-center";
+      sub.className = "text-[9px] sm:text-[10px] leading-tight text-center";
 
       if (!shifts.length) {
         sub.innerHTML = "&nbsp;";
       } else if (shifts.length === 1) {
-        const s = shifts[0];
-        sub.innerHTML = `<span class="font-semibold">Grupo ${s.group}</span>`;
+        sub.innerHTML = `<span class="font-semibold">Grupo ${shifts[0].group}</span>`;
       } else {
-        const g1 = shifts[0].group;
-        const g2 = shifts[1].group;
-        sub.innerHTML = `<span class="font-semibold">${g1} / ${g2}</span>`;
+        sub.innerHTML = `<span class="font-semibold">${shifts[0].group} / ${shifts[1].group}</span>`;
       }
 
       cell.appendChild(sub);
       calendar.appendChild(cell);
     }
 
-    // Click para ver el detalle
     calendar.onclick = (ev) => {
       const cell = ev.target.closest("[data-date]");
       if (!cell) return;
-      const ymd = cell.dataset.date;
-      const date = new Date(`${ymd}T00:00:00`);
-      const shifts = scheduleMap.get(ymd) || [];
+      const date = new Date(`${cell.dataset.date}T00:00:00`);
+      const shifts = scheduleMap.get(cell.dataset.date) || [];
       showDayInfo(date, shifts);
     };
   }
@@ -424,10 +399,7 @@
   // ==== Eventos globales ====
 
   buildBtn.addEventListener("click", () => {
-    if (!startDateInput.value) {
-      alert("Selecciona la fecha inicial");
-      return;
-    }
+    if (!startDateInput.value) return alert("Selecciona la fecha inicial");
 
     let g = getSelectedGroupFromUI();
     if (!g) {
@@ -453,14 +425,6 @@
     const t = new Date();
     const ymd = toYMD(t);
     startDateInput.value = ymd;
-
-    let g = getSelectedGroupFromUI();
-    if (!g) {
-      g = storageGroup.get();
-      setSelectedGroupInUI(g);
-    }
-    storageGroup.set(g);
-
     setStartFromYMD(ymd);
 
     viewYear = t.getFullYear();
@@ -477,10 +441,8 @@
     const d = new Date(viewYear, viewMonth - 1, 1);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
-
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
-
     render();
   });
 
@@ -488,19 +450,14 @@
     const d = new Date(viewYear, viewMonth + 1, 1);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
-
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
-
     render();
   });
 
   addHolidayBtn.addEventListener("click", () => {
     const v = holidayDateInput.value;
-    if (!v) {
-      alert("Selecciona una fecha festiva");
-      return;
-    }
+    if (!v) return alert("Selecciona una fecha festiva");
     festivos.add(v);
     saveFestivos();
     renderFestivosUI();
@@ -516,14 +473,29 @@
     render();
   });
 
-  // ==== Init ====
+  // ============================================
+  //    EXPORTAR PDF (Opción C — Todo el card)
+  // ============================================
+  exportBtn.addEventListener("click", () => {
+    printArea.innerHTML = "";
+    const clone = calendarCard.cloneNode(true);
+    clone.id = "print-area-content";
+    clone.classList.add("no-print-shadow");
+    printArea.appendChild(clone);
+
+    window.print();
+
+    setTimeout(() => {
+      printArea.innerHTML = "";
+    }, 500);
+  });
+
+  // INIT
   loadFestivos();
   renderFestivosUI();
 
   if (!loadStartFromStorage()) {
     setSelectedGroupInUI("A");
-    viewYear = now.getFullYear();
-    viewMonth = now.getMonth();
   }
 
   setActiveTab("config");

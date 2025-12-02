@@ -24,7 +24,33 @@
     }
   </script>
 
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Área solo para impresión */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      #print-area, #print-area * {
+        visibility: visible !important;
+      }
+
+      #print-area {
+        position: absolute;
+        inset: 0;
+        margin: 0 auto;
+        padding: 0;
+        width: 100%;
+      }
+
+      /* Quitar sombras y bordes */
+      .no-print-shadow {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+      }
+    }
+  </style>
+
 </head>
 
 <body class="min-h-screen bg-bg text-fg antialiased">
@@ -68,7 +94,6 @@
       <section class="bg-card border border-line rounded-2xl p-4 shadow-sm">
         <form id="form" class="space-y-3">
 
-          <!-- Fecha inicial -->
           <label class="block">
             <span class="block text-sm mb-1">Primera fecha que trabajas (inicio de secuencia)</span>
             <input
@@ -120,15 +145,12 @@
         </form>
       </section>
 
-      <!-- CARD 2: Festivos -->
+      <!-- Festivos -->
       <section class="bg-card border border-line rounded-2xl p-4 text-xs sm:text-sm shadow-sm">
-
-        <div class="flex flex-col gap-1">
-          <h3 class="font-semibold text-sm">Días festivos</h3>
-          <p class="text-[11px] text-muted">
-            Los festivos entre semana (L–V) se tratarán como sábado (dos jornadas).
-          </p>
-        </div>
+        <h3 class="font-semibold text-sm">Días festivos</h3>
+        <p class="text-[11px] text-muted">
+          Los festivos entre semana (L–V) se tratarán como sábado (dos jornadas).
+        </p>
 
         <div class="mt-2 flex gap-2 items-center">
           <input
@@ -152,51 +174,54 @@
     <!-- TAB: CALENDARIO -->
     <section id="tab-calendar" class="hidden">
 
-      <!-- CARD COMPLETA DE CALENDARIO -->
-      <section class="bg-card border border-line rounded-2xl p-4 shadow-sm space-y-4">
+      <!-- Botón Exportar -->
+      <div class="flex justify-end mb-3">
+        <button
+          id="exportPDF"
+          class="px-3 py-2 rounded-xl text-sm bg-accent text-white hover:opacity-90"
+          >
+          Exportar PDF
+        </button>
+      </div>
+
+      <!-- ÁREA COMPLETA QUE SE EXPORTA -->
+      <section id="calendarCard" class="no-print-shadow bg-card border border-line rounded-2xl p-4 shadow-sm space-y-4">
 
         <!-- Navegación -->
         <nav class="flex items-center justify-between gap-2">
-          <button id="prev" class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50">
-            &larr; Mes
-          </button>
-
+          <button id="prev" class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50">&larr; Mes</button>
           <h2 id="monthTitle" class="text-base font-semibold text-center flex-1"></h2>
-
-          <button id="next" class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50">
-            Mes &rarr;
-          </button>
+          <button id="next" class="rounded-xl px-3 py-2 text-sm border border-line hover:bg-gray-50">Mes &rarr;</button>
         </nav>
 
-        <!-- LEYENDA NUEVA -->
+        <!-- Leyenda -->
         <section class="flex flex-col gap-2 text-xs text-muted">
 
-          <!-- Línea 1: Grupos -->
+          <!-- Línea 1 -->
           <div class="flex flex-wrap gap-4 items-center">
             <div class="flex items-center gap-1">
               <span class="inline-block size-3 rounded bg-blue-400"></span>
-              <span>Grupo A (<span id="turnosA">0</span>)</span>
+              <span id="legendA">Grupo A</span>
             </div>
 
             <div class="flex items-center gap-1">
               <span class="inline-block size-3 rounded bg-green-400"></span>
-              <span>Grupo B (<span id="turnosB">0</span>)</span>
+              <span id="legendB">Grupo B</span>
             </div>
 
             <div class="flex items-center gap-1">
               <span class="inline-block size-3 rounded bg-red-400"></span>
-              <span>Grupo C (<span id="turnosC">0</span>)</span>
+              <span id="legendC">Grupo C</span>
             </div>
           </div>
 
-          <!-- Línea 2: Sábado / Domingo / Festivo -->
+          <!-- Línea 2 -->
           <div class="flex flex-wrap gap-4 items-center">
             <div class="flex items-center gap-2">
               <span class="inline-block size-3 rounded bg-amber-200 border border-amber-300"></span>
               <span>Sábado / Festivo (2 turnos) / Domingo (1 turno)</span>
             </div>
           </div>
-
         </section>
 
         <!-- Calendario -->
@@ -216,20 +241,19 @@
 
         <!-- Panel de detalle -->
         <section id="dayInfo" class="bg-card border border-line rounded-2xl p-3 text-xs sm:text-sm text-slate-700">
-          <div id="dayInfoText">
-            Toca un día del calendario para ver los detalles del turno.
-          </div>
+          <div id="dayInfoText">Toca un día del calendario para ver los detalles del turno.</div>
         </section>
 
-      </section> <!-- fin card -->
+      </section>
     </section>
 
-    <!-- Footer -->
     <footer class="mt-6 text-center text-[11px] sm:text-xs text-muted">
       Cálculo de turnos 12×48 · Sábados / domingos / festivos en amarillo
     </footer>
 
   </main>
+
+  <div id="print-area"></div>
 
   <script src="app.js"></script>
 </body>
