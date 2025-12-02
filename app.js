@@ -143,11 +143,15 @@
 
   tabBtnConfig.addEventListener("click", () => setActiveTab("config"));
 
-  // 👉 CAMBIO IMPORTANTE: cuando entra al tab calendario, SIEMPRE el mes actual
+  // 👉 AL ABRIR TAB CALENDARIO → SIEMPRE MES ACTUAL Y LIMPIAR DETALLE
   tabBtnCalendar.addEventListener("click", () => {
     const t = new Date();
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
+
+    dayInfoText.textContent =
+      "Toca un día del calendario para ver los detalles del turno.";
+
     render();
     setActiveTab("calendar");
   });
@@ -194,7 +198,6 @@
     d.setHours(0, 0, 0, 0);
     startDateMidnight = new Date(d);
 
-    // cargar grupo guardado
     const g = storageGroup.get();
     setSelectedGroupInUI(g);
 
@@ -213,14 +216,13 @@
     let currentDate = new Date(startDateMidnight);
     currentDate.setHours(0, 0, 0, 0);
 
-    // grupo inicial según configuración
-    const startGroup = storageGroup.get(); // "A"/"B"/"C"
+    const startGroup = storageGroup.get();
     let groupIndex = GROUPS.indexOf(startGroup);
     if (groupIndex < 0) groupIndex = 0;
 
     while (currentDate.getTime() <= lastOfMonth.getTime()) {
       const key = toYMD(currentDate);
-      const dow = currentDate.getDay(); // 0 Dom .. 6 Sáb
+      const dow = currentDate.getDay();
       const isFestivo = festivos.has(key);
       const isWeekday = dow >= 1 && dow <= 5;
       const isSaturday = dow === 6;
@@ -313,7 +315,27 @@
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const scheduleMap = buildScheduleMapForMonth(viewYear, viewMonth);
 
-    const jsDow = first.getDay(); // 0 Dom .. 6 Sáb
+    // ⭐⭐⭐ CONTAR TURNOS POR MES ⭐⭐⭐
+    let countA = 0,
+      countB = 0,
+      countC = 0;
+
+    scheduleMap.forEach((shifts) => {
+      shifts.forEach((s) => {
+        if (s.group === "A") countA++;
+        else if (s.group === "B") countB++;
+        else if (s.group === "C") countC++;
+      });
+    });
+
+    // Actualizar leyenda
+    $("#turnosA").textContent = countA;
+    $("#turnosB").textContent = countB;
+    $("#turnosC").textContent = countC;
+
+    // ============================
+
+    const jsDow = first.getDay();
     const mondayBased = (jsDow + 6) % 7;
     for (let i = 0; i < mondayBased; i++) {
       const e = document.createElement("div");
@@ -365,11 +387,13 @@
 
       const label = document.createElement("div");
       label.textContent = String(day);
-      label.className = "font-semibold text-sm sm:text-base leading-tight mb-0.5";
+      label.className =
+        "font-semibold text-sm sm:text-base leading-tight mb-0.5";
       cell.appendChild(label);
 
       const sub = document.createElement("div");
-      sub.className = "text-[9px] sm:text-[10px] leading-tight text-center";
+      sub.className =
+        "text-[9px] sm:text-[10px] leading-tight text-center";
 
       if (!shifts.length) {
         sub.innerHTML = "&nbsp;";
@@ -386,6 +410,7 @@
       calendar.appendChild(cell);
     }
 
+    // Click para ver el detalle
     calendar.onclick = (ev) => {
       const cell = ev.target.closest("[data-date]");
       if (!cell) return;
@@ -398,7 +423,6 @@
 
   // ==== Eventos globales ====
 
-  // 👉 CAMBIO: Calcular siempre lleva al mes actual
   buildBtn.addEventListener("click", () => {
     if (!startDateInput.value) {
       alert("Selecciona la fecha inicial");
@@ -417,6 +441,9 @@
     const t = new Date();
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
+
+    dayInfoText.textContent =
+      "Toca un día del calendario para ver los detalles del turno.";
 
     render();
     setActiveTab("calendar");
@@ -438,6 +465,10 @@
 
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
+
+    dayInfoText.textContent =
+      "Toca un día del calendario para ver los detalles del turno.";
+
     render();
     setActiveTab("calendar");
   });
@@ -446,6 +477,10 @@
     const d = new Date(viewYear, viewMonth - 1, 1);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
+
+    dayInfoText.textContent =
+      "Toca un día del calendario para ver los detalles del turno.";
+
     render();
   });
 
@@ -453,6 +488,10 @@
     const d = new Date(viewYear, viewMonth + 1, 1);
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
+
+    dayInfoText.textContent =
+      "Toca un día del calendario para ver los detalles del turno.";
+
     render();
   });
 

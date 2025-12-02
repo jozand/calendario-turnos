@@ -168,40 +168,35 @@
           </button>
         </nav>
 
-        <!-- Leyenda -->
+        <!-- LEYENDA NUEVA -->
         <section class="flex flex-col gap-2 text-xs text-muted">
 
-          <div class="flex flex-wrap gap-4">
-            <div class="flex items-center gap-2">
-              <span class="size-3 rounded bg-blue-200 inline-block"></span>
-              <span>Día con turno (A/B/C)</span>
+          <!-- Línea 1: Grupos -->
+          <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex items-center gap-1">
+              <span class="inline-block size-3 rounded bg-blue-400"></span>
+              <span>Grupo A (<span id="turnosA">0</span>)</span>
             </div>
 
-            <div class="flex items-center gap-2">
-              <span class="size-3 rounded border border-line bg-white inline-block"></span>
-              <span>Sin turno</span>
+            <div class="flex items-center gap-1">
+              <span class="inline-block size-3 rounded bg-green-400"></span>
+              <span>Grupo B (<span id="turnosB">0</span>)</span>
             </div>
 
-            <div class="flex items-center gap-2">
-              <span class="size-3 rounded bg-amber-200 border border-amber-300 inline-block"></span>
-              <span>Sábado / Domingo / Festivo</span>
+            <div class="flex items-center gap-1">
+              <span class="inline-block size-3 rounded bg-red-400"></span>
+              <span>Grupo C (<span id="turnosC">0</span>)</span>
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-4">
-            <div class="flex items-center gap-1">
-              <span class="size-3 rounded bg-blue-400 inline-block"></span>
-              <span>Grupo A</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="size-3 rounded bg-green-400 inline-block"></span>
-              <span>Grupo B</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="size-3 rounded bg-red-400 inline-block"></span>
-              <span>Grupo C</span>
+          <!-- Línea 2: Sábado / Domingo / Festivo -->
+          <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex items-center gap-2">
+              <span class="inline-block size-3 rounded bg-amber-200 border border-amber-300"></span>
+              <span>Sábado / Festivo (2 turnos) / Domingo (1 turno)</span>
             </div>
           </div>
+
         </section>
 
         <!-- Calendario -->
