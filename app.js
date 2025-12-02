@@ -142,7 +142,15 @@
   }
 
   tabBtnConfig.addEventListener("click", () => setActiveTab("config"));
-  tabBtnCalendar.addEventListener("click", () => setActiveTab("calendar"));
+
+  // 👉 CAMBIO IMPORTANTE: cuando entra al tab calendario, SIEMPRE el mes actual
+  tabBtnCalendar.addEventListener("click", () => {
+    const t = new Date();
+    viewYear = t.getFullYear();
+    viewMonth = t.getMonth();
+    render();
+    setActiveTab("calendar");
+  });
 
   // ==== Grupo seleccionado en UI ====
   function getSelectedGroupFromUI() {
@@ -185,8 +193,6 @@
     startDateInput.value = toYMD(d);
     d.setHours(0, 0, 0, 0);
     startDateMidnight = new Date(d);
-    viewYear = d.getFullYear();
-    viewMonth = d.getMonth();
 
     // cargar grupo guardado
     const g = storageGroup.get();
@@ -315,7 +321,7 @@
       calendar.appendChild(e);
     }
 
-    calendar.onclick = null; // limpia delegación previa
+    calendar.onclick = null;
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(viewYear, viewMonth, day);
@@ -380,7 +386,6 @@
       calendar.appendChild(cell);
     }
 
-    // Delegación para mostrar detalle
     calendar.onclick = (ev) => {
       const cell = ev.target.closest("[data-date]");
       if (!cell) return;
@@ -392,6 +397,8 @@
   }
 
   // ==== Eventos globales ====
+
+  // 👉 CAMBIO: Calcular siempre lleva al mes actual
   buildBtn.addEventListener("click", () => {
     if (!startDateInput.value) {
       alert("Selecciona la fecha inicial");
@@ -400,14 +407,17 @@
 
     let g = getSelectedGroupFromUI();
     if (!g) {
-      g = "A"; // valor por defecto si no marca nada
+      g = "A";
       setSelectedGroupInUI(g);
     }
     storageGroup.set(g);
 
     setStartFromYMD(startDateInput.value);
-    viewYear = startDateMidnight.getFullYear();
-    viewMonth = startDateMidnight.getMonth();
+
+    const t = new Date();
+    viewYear = t.getFullYear();
+    viewMonth = t.getMonth();
+
     render();
     setActiveTab("calendar");
   });
@@ -419,12 +429,13 @@
 
     let g = getSelectedGroupFromUI();
     if (!g) {
-      g = storageGroup.get(); // lo que ya tenía guardado
+      g = storageGroup.get();
       setSelectedGroupInUI(g);
     }
     storageGroup.set(g);
 
     setStartFromYMD(ymd);
+
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
     render();
@@ -471,7 +482,6 @@
   renderFestivosUI();
 
   if (!loadStartFromStorage()) {
-    // si no hay nada guardado, grupo A por defecto
     setSelectedGroupInUI("A");
     viewYear = now.getFullYear();
     viewMonth = now.getMonth();
