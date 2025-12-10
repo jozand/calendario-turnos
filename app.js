@@ -15,6 +15,9 @@
 
   let festivos = new Set();
 
+  // 🔹 Fecha seleccionada actualmente en el calendario (YYYY-MM-DD)
+  let selectedYMD = null;
+
   // ==== Helpers ====
   const fmtDate = (d) =>
     new Intl.DateTimeFormat("es-GT", {
@@ -55,6 +58,7 @@
       if (Array.isArray(arr)) festivos = new Set(arr);
     } catch {}
   }
+
   function saveFestivos() {
     localStorage.setItem(LS_KEY_FESTIVOS, JSON.stringify([...festivos]));
   }
@@ -141,7 +145,9 @@
     }
   }
 
-  tabBtnConfig.addEventListener("click", () => setActiveTab("config"));
+  tabBtnConfig.addEventListener("click", () => {
+    setActiveTab("config");
+  });
 
   // 👉 AL ABRIR TAB CALENDARIO → SIEMPRE MES ACTUAL Y LIMPIAR DETALLE
   tabBtnCalendar.addEventListener("click", () => {
@@ -149,6 +155,8 @@
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
 
+    // Al cambiar de tab, limpiamos selección y texto
+    selectedYMD = null;
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
 
@@ -306,6 +314,22 @@
         .join("")}</div>`;
   }
 
+  // 🔹 Aplica la clase de día seleccionado a la celda correcta
+  function applySelectedStyles() {
+    const cells = calendar.querySelectorAll("[data-date]");
+    cells.forEach((cell) => {
+      cell.classList.remove("day-selected");
+    });
+
+    if (!selectedYMD) return;
+    const selectedCell = calendar.querySelector(
+      `[data-date="${selectedYMD}"]`,
+    );
+    if (selectedCell) {
+      selectedCell.classList.add("day-selected");
+    }
+  }
+
   // ==== Render calendario ====
   function render() {
     monthTitle.textContent = fmtMonthTitle(viewYear, viewMonth);
@@ -332,8 +356,6 @@
     $("#turnosA").textContent = countA;
     $("#turnosB").textContent = countB;
     $("#turnosC").textContent = countC;
-
-    // ============================
 
     const jsDow = first.getDay();
     const mondayBased = (jsDow + 6) % 7;
@@ -363,6 +385,9 @@
         "text-slate-900",
         "shadow-[0_0_0_1px_rgba(15,23,42,0.03)]",
         "px-1",
+        "cursor-pointer",
+        "transition-transform",
+        "duration-100",
       ];
 
       if (shifts.length === 0) {
@@ -384,6 +409,11 @@
       const cell = document.createElement("div");
       cell.className = classes.join(" ");
       cell.dataset.date = ymd;
+
+      // Si este día es el seleccionado actualmente, marcarlo
+      if (selectedYMD === ymd) {
+        cell.classList.add("day-selected");
+      }
 
       const label = document.createElement("div");
       label.textContent = String(day);
@@ -410,13 +440,16 @@
       calendar.appendChild(cell);
     }
 
-    // Click para ver el detalle
+    // Click para ver el detalle + marcar selección
     calendar.onclick = (ev) => {
       const cell = ev.target.closest("[data-date]");
       if (!cell) return;
       const ymd = cell.dataset.date;
       const date = new Date(`${ymd}T00:00:00`);
       const shifts = scheduleMap.get(ymd) || [];
+
+      selectedYMD = ymd; // guardar fecha seleccionada
+      applySelectedStyles(); // aplicar efecto visual
       showDayInfo(date, shifts);
     };
   }
@@ -442,6 +475,7 @@
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
 
+    selectedYMD = null;
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
 
@@ -466,6 +500,7 @@
     viewYear = t.getFullYear();
     viewMonth = t.getMonth();
 
+    selectedYMD = null;
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
 
@@ -478,6 +513,7 @@
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
 
+    selectedYMD = null;
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
 
@@ -489,6 +525,7 @@
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
 
+    selectedYMD = null;
     dayInfoText.textContent =
       "Toca un día del calendario para ver los detalles del turno.";
 

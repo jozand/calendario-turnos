@@ -13,3 +13,12 @@
 #calendar>div:active {
   transform: scale(0.98);
 }
+
+/* Día seleccionado en el calendario */
+.day-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.45);
+  transform: scale(1.03);
+  z-index: 1;
+}
